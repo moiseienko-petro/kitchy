@@ -70,6 +70,32 @@ export const TimerIcon = (props: IconProps) => (
   </BaseIcon>
 );
 
+export function ProductsIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {/* box */}
+      <path d="M4 7.5l8-4 8 4" />
+      <path d="M4 7.5v9l8 4 8-4v-9" />
+      <path d="M12 3.5v17" />
+
+      {/* list marks on the box */}
+      <path d="M8 10h2" />
+      <path d="M8 13h2" />
+      <path d="M8 16h2" />
+    </svg>
+  );
+}
+
 /* ---------- Close (X) ---------- */
 
 export const CloseIcon = (props: IconProps) => (
@@ -93,6 +119,24 @@ export const PauseIcon = (props: IconProps) => (
     <rect x="13" y="5" width="4" height="14" fill="currentColor" stroke="none" />
   </BaseIcon>
 );
+
+export function EditIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+    </svg>
+  );
+}
 
 /* ---------- Ukraine Flag ---------- */
 

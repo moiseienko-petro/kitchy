@@ -1,6 +1,7 @@
 {
   "shoppingName": "Shopping List",
   "timerName": "Timer",
+  "productsName": "Products",
   "timersSectionName": "Active timers", 
   "removeTimerTitle": "Delete timer?",
   "removeTimerText": "Delete timer \"{{name}}\"?", 
@@ -18,6 +19,12 @@
   "currentListTitle": "Current List",
   "emptyShoppingListTitle": "Shopping list is empty",
   "emptyShoppingListProposal": "Add products using the search above",
+
+  "productNameTitle": "Name",
+  "productCategoryNameTitle": "Category",
+  "productsTitle": "Products",
+  "productsEmptyTitle": "No products yet",
+  "productsEmptyText":"Products will appear here after you add them to shopping list.",
 
   "errorCategoryExist": "Category already exists — select or create a new one",
   "errorProductAlreadyAdded": "Product already added — update the quantity",

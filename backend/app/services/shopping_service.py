@@ -3,8 +3,8 @@ from typing import List, Optional
 from app.db.product_repository import ProductRepository
 from app.db.shopping_list_repository import ShoppingListRepository
 from app.db.shopping_item_repository import ShoppingItemRepository
-from app.models.shopping_item import ShoppingItem
 from app.models.shopping_list import ShoppingList
+from app.models.views.shopping_item_view import ShoppingItemView
 
 
 class ShoppingService:
@@ -30,15 +30,16 @@ class ShoppingService:
     def get_current_list(self) -> ShoppingList:
         return self._ensure_active_list()
 
-    def list_items(self) -> List[ShoppingItem]:
+    def list_items(self) -> List[ShoppingItemView]:
         active = self._ensure_active_list()
-        return self.item_repo.list_by_list_id(active.id)
+        return self.item_repo.list_view_by_list_id(active.id)
 
     def add_item(
         self,
         name: str,
-        category: Optional[str],
-    ) -> ShoppingItem:
+        category: Optional[str]
+    ) -> ShoppingItemView:
+
         clean = (name or "").strip()
         if not clean:
             raise ValueError("name is required")
@@ -46,7 +47,14 @@ class ShoppingService:
         active = self._ensure_active_list()
 
         product = self.product_repo.get_or_create(clean, category)
-        return self.item_repo.add(active.id, product)
+
+        self.item_repo.add(
+            list_id=active.id,
+            product=product
+        )
+
+        # повертаємо одразу view через JOIN
+        return self.item_repo.list_view_by_list_id(active.id)[-1]
 
     def done(self) -> ShoppingList:
         self.list_repo.archive_active()

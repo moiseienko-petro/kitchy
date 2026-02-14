@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 from app.services.container import shopping_service
-from app.models.shopping_item import ShoppingItem
+from app.models.views.shopping_item_view import ShoppingItemView
 from app.models.shopping_list import ShoppingList
 
 router = APIRouter(prefix="/api/shopping", tags=["shopping"])
@@ -19,12 +19,12 @@ def get_current_list():
     return shopping_service.get_current_list()
 
 
-@router.get("/items", response_model=List[ShoppingItem])
+@router.get("/items", response_model=List[ShoppingItemView])
 def list_items():
     return shopping_service.list_items()
 
 
-@router.post("/items", response_model=ShoppingItem)
+@router.post("/items", response_model=ShoppingItemView)
 def add_item(req: AddItemRequest):
     try:
         return shopping_service.add_item(req.name, req.category)

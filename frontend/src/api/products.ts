@@ -29,3 +29,41 @@ export async function productsByCategory(category: string): Promise<Product[]> {
   if (!res.ok) throw new Error("products by category failed");
   return res.json();
 }
+
+
+/* ---------- LIST ---------- */
+
+export async function listProducts(): Promise<Product[]> {
+  const res = await fetch(PRODUCTS_API);
+  if (!res.ok) throw new Error("Failed to load products");
+  return res.json();
+}
+
+/* ---------- UPDATE ---------- */
+
+export async function updateProduct(
+  id: string,
+  data: { name: string; category: string | null }
+): Promise<Product> {
+  const res = await fetch(`${PRODUCTS_API}/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Failed to update product");
+
+  return res.json();
+}
+
+/* ---------- DELETE ---------- */
+
+export async function deleteProduct(id: string): Promise<void> {
+  const res = await fetch(`${PRODUCTS_API}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) throw new Error("Failed to delete product");
+}

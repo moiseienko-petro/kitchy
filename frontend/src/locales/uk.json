@@ -1,6 +1,7 @@
 {
   "shoppingName": "Список покупок",
   "timerName": "Таймер",
+  "productsName": "Продукти",
   "timersSectionName": "Активні таймери", 
   "removeTimerTitle": "Видалити таймер?",
   "removeTimerText": "Видалити таймер \"{{name}}\"?",
@@ -18,6 +19,12 @@
   "currentListTitle": "Поточний список",
   "emptyShoppingListTitle": "Список покупок порожній",
   "emptyShoppingListProposal": "Додайте продукти використовуючи пошук вище",
+
+  "productNameTitle": "Імʼя",
+  "productCategoryNameTitle": "Категорія",
+  "productsTitle": "Продукти",
+  "productsEmptyTitle": "Ще нема продуктів",
+  "productsEmptyText":"Продукти зʼявляться коли ви додасте їх в список покупок.",
 
   "errorCategoryExist": "Категорія вже існує - оберіть чи створіть нову",
   "errorProductAlreadyAdded": "Продукт вже додано до списку - оновіть кількість",

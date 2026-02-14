@@ -4,14 +4,13 @@ import { listTimers, deleteTimer } from "../api/timers";
 import TimerCard from "../components/TimerCard";
 import TimerOverlay from "../components/TimerOverlay";
 import ShoppingOverlay from "../components/ShoppingOverlay";
+import ProductsOverlay from "../components/ProductsOverlay";
 import ConfirmOverlay from "../components/ConfirmOverlay";
 
 import { useOverlayStack } from "../ui/useOverlayStack";
 import { useHardwareKeys } from "../hooks/useHardwareKeys";
 import type { OverlayActions } from "../ui/overlayActions";
-
-import { formatSeconds } from "../utils/time";
-import { CartIcon, TimerIcon, UkraineFlag, UKFlag } from "../ui/icons";
+import { CartIcon, TimerIcon, ProductsIcon, UkraineFlag, UKFlag } from "../ui/icons";
 import { useTranslation } from "react-i18next";
 
 /* ---------- types ---------- */
@@ -116,6 +115,14 @@ export default function HomeView() {
               <CartIcon size={42} />
               <span style={tileLabel}>{t("shoppingName")}</span>
             </button>
+
+            <button
+              style={tileButton}
+              onClick={() => overlays.push({ type: "products" })}
+            >
+              <ProductsIcon size={42} />
+              <span style={tileLabel}>{t("productsName")}</span>
+            </button>
           </div>
         </div>
 
@@ -163,6 +170,16 @@ export default function HomeView() {
       )}
       {overlays.top?.type === "shoppingList" && (
         <ShoppingOverlay
+          onClose={() => {
+            overlays.pop();
+            setOverlayActions(null);
+          }}
+          registerActions={setOverlayActions}
+          unregisterActions={() => setOverlayActions(null)}
+        />
+      )}
+      {overlays.top?.type === "products" && (
+        <ProductsOverlay
           onClose={() => {
             overlays.pop();
             setOverlayActions(null);

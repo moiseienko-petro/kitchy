@@ -1,23 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import QuantityKeyboard from "../keyboards/QuantityKeyboard";
 import type { QuantityValue } from "../keyboards/QuantityKeyboard";
+import { useTranslation } from "react-i18next";
 
-type Unit = "г" | "кг" | "шт" | null;
-
-function parseQuantity(v: string): { num: string; unit: Unit } {
-  const m = v.match(/^([\d.]+)?\s*(г|кг|шт)?$/);
-  return {
-    num: m?.[1] ?? "",
-    unit: (m?.[2] as Unit) ?? null,
-  };
-}
-
-function formatQuantity(q: { num: string; unit: Unit }) {
-  if (!q.num) return "";
-  const num = q.num.replace(/\.$/, ""); // never allow trailing '.'
-  if (!num) return "";
-  return q.unit ? `${num}${q.unit}` : num;
-}
+type Unit = "g" | "kg" | "pcs" | null;
 
 interface Props {
   value: string;
@@ -26,30 +12,102 @@ interface Props {
 
 export default function QuantityField({ value, onCommit }: Props) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [open, setOpen] = useState(false);
-  const [q, setQ] = useState(() => parseQuantity(value));
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputWidth, setInputWidth] = useState<number | null>(null);
 
-  // sync external value
+  const { t } = useTranslation();
+
+  /* ----------------------------
+     INTERNAL STATE
+  ----------------------------- */
+
+  const [q, setQ] = useState(() => parseQuantity(value));
+  const qRef = useRef(q);
+
+  useEffect(() => {
+    qRef.current = q;
+  }, [q]);
+
   useEffect(() => {
     setQ(parseQuantity(value));
   }, [value]);
 
-  // click outside → close (capture phase so stopPropagation won't block it)
+  /* ----------------------------
+     OUTSIDE CLICK HANDLER
+  ----------------------------- */
+
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
       if (!open) return;
+
       const el = wrapperRef.current;
       if (el && !el.contains(e.target as Node)) {
-        setOpen(false);
+        commitAndClose();
       }
     }
 
-    window.addEventListener("pointerdown", onPointerDown, true);
-    return () => window.removeEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
+
+  /* ----------------------------
+     HELPERS
+  ----------------------------- */
+
+  function parseQuantity(v: string): { num: string; unit: Unit } {
+    const m = v.match(/^([\d.]+)?\s*(г|кг|шт|g|kg|pcs)?$/);
+
+    return {
+      num: m?.[1] ?? "",
+      unit: normalizeUnit(m?.[2] ?? null),
+    };
+  }
+
+  function normalizeUnit(u: string | null): Unit {
+    if (!u) return null;
+
+    const map: Record<string, Unit> = {
+      г: "g",
+      кг: "kg",
+      шт: "pcs",
+      g: "g",
+      kg: "kg",
+      pcs: "pcs",
+    };
+
+    return map[u] ?? null;
+  }
+
+  function formatQuantity(q: { num: string; unit: Unit }) {
+    if (!q.num) return "";
+
+    const num = q.num.replace(/\.$/, "");
+    if (!num) return "";
+
+    if (!q.unit) return num;
+
+    return `${num}${t(`units.${q.unit}`)}`;
+  }
+
+  function commitAndClose() {
+    const current = qRef.current;
+
+    const q2 =
+      current.num && !current.unit
+        ? { ...current, unit: "pcs" as Unit }
+        : current;
+
+    const formatted = formatQuantity(q2);
+
+    onCommit(formatted || "");
+    setOpen(false);
+  }
+
+  /* ----------------------------
+     RENDER
+  ----------------------------- */
 
   const qAsKeyboardValue: QuantityValue = {
     num: q.num,
@@ -69,7 +127,9 @@ export default function QuantityField({ value, onCommit }: Props) {
         style={qtyInput}
         onClick={(e) => {
           e.stopPropagation();
-          if (inputRef.current) setInputWidth(inputRef.current.offsetWidth);
+          if (inputRef.current) {
+            setInputWidth(inputRef.current.offsetWidth);
+          }
           setOpen(true);
         }}
       />
@@ -83,20 +143,15 @@ export default function QuantityField({ value, onCommit }: Props) {
         >
           <QuantityKeyboard
             value={qAsKeyboardValue}
-            onChange={(v) => setQ({ num: v.num, unit: v.unit })}
-            onOk={() => {
-              // Default unit if user entered only a number
-              const q2 = q.num && !q.unit ? { ...q, unit: "шт" as Unit } : q;
-              const v = formatQuantity(q2);
-              if (v) onCommit(v);
-              setOpen(false);
-            }}
+            onChange={(v) => setQ(v)}
+            onOk={commitAndClose}
           />
         </div>
       )}
     </div>
   );
 }
+
 
 /* styles — мінімальні, не ламають layout */
 

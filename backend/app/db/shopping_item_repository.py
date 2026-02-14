@@ -4,6 +4,7 @@ from typing import List
 
 from app.db.connection import get_connection
 from app.models.shopping_item import ShoppingItem
+from app.models.views.shopping_item_view import ShoppingItemView
 from app.models.product import Product
 
 
@@ -12,21 +13,30 @@ class ShoppingItemRepository:
     def get_conn(self):
         return get_connection()
 
-    def list_by_list_id(self, list_id: str) -> List[ShoppingItem]:
+    def list_view_by_list_id(self, list_id: str) -> List[ShoppingItemView]:
         conn = self.get_conn()
 
         rows = conn.execute(
             """
-                SELECT *
-                FROM shopping_items
-                WHERE list_id = ?
-                ORDER BY created_at_ts ASC
-                """,
+            SELECT
+                si.id,
+                si.list_id,
+                si.product_id,
+                si.created_at_ts,
+                si.quantity,
+                p.name,
+                p.category
+            FROM shopping_items si
+            JOIN products p ON p.id = si.product_id
+            WHERE si.list_id = ?
+            ORDER BY si.created_at_ts ASC
+            """,
             (list_id,),
         ).fetchall()
 
-        return [ShoppingItem(**dict(r)) for r in rows]
-
+        return [ShoppingItemView(**dict(r)) for r in rows]
+    
+    
     def add(
         self,
         list_id: str,
@@ -40,17 +50,15 @@ class ShoppingItemRepository:
 
         conn.execute(
             """
-                INSERT INTO shopping_items
-                  (id, list_id, product_id, name, category, created_at_ts)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
+            INSERT INTO shopping_items
+                (id, list_id, product_id, created_at_ts)
+                VALUES (?, ?, ?, ?)
+            """,
             (
                 item_id,
                 list_id,
                 product.id,
-                product.name,
-                product.category,
-                now,
+                now
             ),
         )
         conn.commit()
@@ -59,8 +67,6 @@ class ShoppingItemRepository:
             id=item_id,
             list_id=list_id,
             product_id=product.id,
-            name=product.name,
-            category=product.category,
             created_at_ts=now,
             quantity=1,
         )
