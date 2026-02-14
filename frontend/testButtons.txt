@@ -1,0 +1,5 @@
+	•	t → відкрився ⏱
+	•	ArrowRight → +1 хв
+	•	ArrowLeft → −1 хв
+	•	Enter → Start
+	•	h → повернувся Home

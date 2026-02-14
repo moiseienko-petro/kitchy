@@ -1,0 +1,11 @@
+export function formatSeconds(seconds: number): string {
+    const safe = Math.max(0, Math.floor(seconds));
+  
+    const mins = Math.floor(safe / 60);
+    const secs = safe % 60;
+  
+    const mm = String(mins).padStart(2, "0");
+    const ss = String(secs).padStart(2, "0");
+  
+    return `${mm}:${ss}`;
+  }

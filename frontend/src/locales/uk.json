@@ -1,0 +1,36 @@
+{
+  "shoppingName": "Список покупок",
+  "timerName": "Таймер",
+  "timersSectionName": "Активні таймери", 
+  "removeTimerTitle": "Видалити таймер?",
+  "removeTimerText": "Видалити таймер \"{{name}}\"?",
+
+  "defaultTimerName": "Таймер",
+  "timerTitle": "Встановити таймер", 
+  "timerNamePlaceholder": "Назва таймера (опціонально)",
+
+  "shoppingTitle": "Список покупок", 
+  "noCategoryName": "Інше",
+  "productNamePlaceholder": "Назва продукта...",
+  "newProductTitle": "Новий продукт:",
+  "newCategoryName": "+ інша",
+  "categoryNamePlaceholder": "Назва категорії...",
+  "currentListTitle": "Поточний список",
+  "emptyShoppingListTitle": "Список покупок порожній",
+  "emptyShoppingListProposal": "Додайте продукти використовуючи пошук вище",
+
+  "errorCategoryExist": "Категорія вже існує - оберіть чи створіть нову",
+  "errorProductAlreadyAdded": "Продукт вже додано до списку - оновіть кількість",
+
+  "yesButton": "Так",
+  "noButton": "Ні",
+  "okButton": "OK",
+  "startButton": "Старт",
+  "add": "Додати",
+
+  "units": {
+    "g": "г",
+    "kg": "кг",
+    "pcs": "шт"
+  }
+}

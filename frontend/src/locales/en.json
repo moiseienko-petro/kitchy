@@ -1,0 +1,36 @@
+{
+  "shoppingName": "Shopping List",
+  "timerName": "Timer",
+  "timersSectionName": "Active timers", 
+  "removeTimerTitle": "Delete timer?",
+  "removeTimerText": "Delete timer \"{{name}}\"?", 
+
+  "defaultTimerName": "Timer",
+  "timerTitle": "Set Timer",
+  "timerNamePlaceholder": "Timer name (optional)",
+
+  "shoppingTitle": "Shopping List",
+  "noCategoryName": "Other",
+  "productNamePlaceholder": "Product name...",
+  "newProductTitle": "New product:",
+  "newCategoryName": "+ other",
+  "categoryNamePlaceholder": "Category name...",
+  "currentListTitle": "Current List",
+  "emptyShoppingListTitle": "Shopping list is empty",
+  "emptyShoppingListProposal": "Add products using the search above",
+
+  "errorCategoryExist": "Category already exists — select or create a new one",
+  "errorProductAlreadyAdded": "Product already added — update the quantity",
+
+  "yesButton": "Yes",
+  "noButton": "No",
+  "okButton": "OK",
+  "startButton": "Start",
+  "add": "Add",
+
+  "units": {
+    "g": "g",
+    "kg": "kg",
+    "pcs": "pcs"
+  }
+}

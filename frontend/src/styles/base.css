@@ -1,0 +1,28 @@
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f4f6f8;
+    color: #111;
+  }
+  
+  h1, h2 {
+    margin: 0;
+  }
+  
+  button {
+    padding: 16px 24px;
+    font-size: 18px;
+    border-radius: 10px;
+    border: none;
+    background: #2f80ed;
+    color: white;
+  }
+  
+  button:active {
+    transform: scale(0.98);
+  }
+  
+  button.secondary {
+    background: #e0e0e0;
+    color: #111;
+  }
