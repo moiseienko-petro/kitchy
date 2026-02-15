@@ -11,6 +11,7 @@ from app.db.init_db import init_db
 from app.api.timers import router as timers_router
 from app.api.shopping import router as shopping_router
 from app.api.products import router as products_router
+from app.api.category import router as category_router
 from app.scheduler.timer_loop import run_timer_loop
 
 ENV = os.getenv("ENV", "dev")
@@ -34,6 +35,7 @@ app = FastAPI(lifespan=lifespan, title="Kitchy Backend")
 app.include_router(timers_router)
 app.include_router(shopping_router)
 app.include_router(products_router)
+app.include_router(category_router)
 
 if ENV == "dev":
     app.add_middleware(

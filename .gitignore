@@ -1,0 +1,49 @@
+# ------------------------
+# Python
+# ------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Virtual environment
+venv/
+.env/
+.venv/
+
+# SQLite DB
+/data
+*.sqlite3
+*.db
+
+# ------------------------
+# Node / Frontend
+# ------------------------
+node_modules/
+dist/
+frontend_dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite
+.vite/
+
+# ------------------------
+# macOS
+# ------------------------
+.DS_Store
+
+# ------------------------
+# IDE
+# ------------------------
+.idea/
+.vscode/
+*.swp
+
+# ------------------------
+# Environment files
+# ------------------------
+.env
+.env.*

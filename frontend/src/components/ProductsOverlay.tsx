@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { listProducts, updateProduct, deleteProduct, type Product } from "../api/products";
+import {
+  listProducts,
+  updateProduct,
+  deleteProduct,
+  type Product,
+} from "../api/products";
 import { TrashIcon, EditIcon } from "../ui/icons";
-import TextField from "../ui/inputs/TextField"; // твій інпут з touch-клавіатурою
+import TextField from "../ui/inputs/TextField";
 import { useTranslation } from "react-i18next";
 import type { OverlayActions } from "../ui/overlayActions";
 
@@ -14,13 +19,13 @@ interface Props {
 type EditDraft = {
   id: string;
   name: string;
-  category: string; // empty = null
+  category_name: string;
 };
 
-export default function ProductsOverlay({ 
-    onClose, 
-    registerActions,
-    unregisterActions,
+export default function ProductsOverlay({
+  onClose,
+  registerActions,
+  unregisterActions,
 }: Props) {
   const { t } = useTranslation();
 
@@ -38,16 +43,19 @@ export default function ProductsOverlay({
     return unregisterActions;
   }, []);
 
-  // group by category (null -> "Інше")
+  /* ---------------- GROUPING ---------------- */
+
   const groups = useMemo(() => {
     const map = new Map<string, Product[]>();
+
     for (const p of products) {
-      const key = (p.category && p.category.trim()) ? p.category.trim() : t("noCategoryName");
+      const key =
+        p.category_name?.trim() || t("noCategoryName");
+
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(p);
     }
 
-    // sort categories + sort products inside
     const sorted = Array.from(map.entries())
       .map(([cat, list]) => [
         cat,
@@ -55,18 +63,20 @@ export default function ProductsOverlay({
       ] as const)
       .sort((a, b) => a[0].localeCompare(b[0]));
 
-    // ensure "Інше" at the end
     const otherName = t("noCategoryName");
     const others = sorted.filter(([c]) => c === otherName);
     const rest = sorted.filter(([c]) => c !== otherName);
+
     return [...rest, ...others];
   }, [products, t]);
+
+  /* ---------------- EDIT ---------------- */
 
   function startEdit(p: Product) {
     setEditing({
       id: p.id,
       name: p.name,
-      category: p.category ?? "",
+      category_name: p.category_name ?? "",
     });
   }
 
@@ -78,13 +88,13 @@ export default function ProductsOverlay({
     if (!editing) return;
 
     const name = editing.name.trim();
-    const category = editing.category.trim();
+    const category_name = editing.category_name.trim();
 
-    if (!name) return; // можна показати error, але ти просив без зайвого
+    if (!name) return;
 
     await updateProduct(editing.id, {
       name,
-      category: category ? category : null,
+      category_name: category_name || null,
     });
 
     setEditing(null);
@@ -93,23 +103,21 @@ export default function ProductsOverlay({
 
   async function remove(p: Product) {
     await deleteProduct(p.id);
-    // оптимістично: прибираємо одразу, потім sync
     setProducts((prev) => prev.filter((x) => x.id !== p.id));
   }
+
+  /* ---------------- RENDER ---------------- */
 
   return (
     <div style={overlay} onClick={onClose}>
       <div style={panel} onClick={(e) => e.stopPropagation()}>
-        {/* HEADER */}
         <div style={header}>
-          <div style={title}>{t("productsTitle") ?? "Products"}</div>
-
+          <div style={title}>{t("productsTitle")}</div>
           <button type="button" style={closeBtn} onClick={onClose}>
             ✕
           </button>
         </div>
 
-        {/* LIST */}
         <div style={scroll}>
           {groups.map(([categoryName, list]) => (
             <div key={categoryName} style={catBlock}>
@@ -125,13 +133,17 @@ export default function ProductsOverlay({
                         <>
                           <div style={editFields}>
                             <div style={fieldRow}>
-                              <div style={fieldLabel}>{t("productNameTitle")}</div>
+                              <div style={fieldLabel}>
+                                {t("productNameTitle")}
+                              </div>
                               <div style={fieldBox}>
                                 <TextField
                                   value={editing!.name}
                                   onChange={(v) =>
                                     setEditing((prev) =>
-                                      prev ? { ...prev, name: v } : prev
+                                      prev
+                                        ? { ...prev, name: v }
+                                        : prev
                                     )
                                   }
                                 />
@@ -139,13 +151,17 @@ export default function ProductsOverlay({
                             </div>
 
                             <div style={fieldRow}>
-                              <div style={fieldLabel}>{t("productCategoryNameTitle")}</div>
+                              <div style={fieldLabel}>
+                                {t("productCategoryNameTitle")}
+                              </div>
                               <div style={fieldBox}>
                                 <TextField
-                                  value={editing!.category}
+                                  value={editing!.category_name}
                                   onChange={(v) =>
                                     setEditing((prev) =>
-                                      prev ? { ...prev, category: v } : prev
+                                      prev
+                                        ? { ...prev, category_name: v }
+                                        : prev
                                     )
                                   }
                                 />
@@ -154,12 +170,20 @@ export default function ProductsOverlay({
                           </div>
 
                           <div style={actions}>
-                            <button type="button" style={saveBtn} onClick={saveEdit}>
-                              {t("okButton") ?? "OK"}
+                            <button
+                              type="button"
+                              style={saveBtn}
+                              onClick={saveEdit}
+                            >
+                              {t("okButton")}
                             </button>
 
-                            <button type="button" style={cancelBtn} onClick={cancelEdit}>
-                              {t("noButton") ?? "Cancel"}
+                            <button
+                              type="button"
+                              style={cancelBtn}
+                              onClick={cancelEdit}
+                            >
+                              {t("noButton")}
                             </button>
                           </div>
                         </>
@@ -167,9 +191,11 @@ export default function ProductsOverlay({
                         <>
                           <div style={rowMain}>
                             <div style={prodName}>{p.name}</div>
-                            {p.category ? (
-                              <div style={prodMeta}>{p.category}</div>
-                            ) : null}
+                            {p.category_name && (
+                              <div style={prodMeta}>
+                                {p.category_name}
+                              </div>
+                            )}
                           </div>
 
                           <div style={actions}>
@@ -177,8 +203,6 @@ export default function ProductsOverlay({
                               type="button"
                               style={iconBtn}
                               onClick={() => startEdit(p)}
-                              aria-label="Edit"
-                              title="Edit"
                             >
                               <EditIcon size={20} />
                             </button>
@@ -187,8 +211,6 @@ export default function ProductsOverlay({
                               type="button"
                               style={removeBtn}
                               onClick={() => remove(p)}
-                              aria-label="Delete"
-                              title="Delete"
                             >
                               <TrashIcon size={20} />
                             </button>
@@ -204,8 +226,12 @@ export default function ProductsOverlay({
 
           {products.length === 0 && (
             <div style={empty}>
-              <div style={emptyTitle}>{t("productsEmptyTitle")}</div>
-              <div style={emptyText}>{t("productsEmptyText")}</div>
+              <div style={emptyTitle}>
+                {t("productsEmptyTitle")}
+              </div>
+              <div style={emptyText}>
+                {t("productsEmptyText")}
+              </div>
             </div>
           )}
         </div>

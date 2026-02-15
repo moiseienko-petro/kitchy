@@ -3,6 +3,7 @@ from typing import Optional, List
 
 from app.db.connection import get_connection
 from app.models.product import Product
+from app.models.views.product_view import ProductView
 
 
 class ProductRepository:
@@ -10,9 +11,9 @@ class ProductRepository:
     def get_conn(self):
         return get_connection()
 
-    # -------------------------
-    # READ
-    # -------------------------
+    # --------------------------------------------------
+    # READ (ENTITY)
+    # --------------------------------------------------
 
     def get_by_id(self, product_id: str) -> Optional[Product]:
         conn = self.get_conn()
@@ -26,74 +27,114 @@ class ProductRepository:
 
         return Product(**dict(row)) if row else None
 
-    def get_by_name_category(
-        self, name: str, category: Optional[str]
+    def get_by_name_category_id(
+        self,
+        name: str,
+        category_id: str,
     ) -> Optional[Product]:
 
         conn = self.get_conn()
         row = conn.execute(
             """
-            SELECT * FROM products
-            WHERE name = ? AND category IS ?
+            SELECT *
+            FROM products
+            WHERE name = ? AND category_id = ?
             """,
-            (name, category),
+            (name, category_id),
         ).fetchone()
 
         return Product(**dict(row)) if row else None
 
-    def list_all(self, limit: int = 100) -> List[Product]:
+    # --------------------------------------------------
+    # READ (VIEW with JOIN)
+    # --------------------------------------------------
+
+    def get_view_by_id(self, product_id: str) -> Optional[ProductView]:
+        conn = self.get_conn()
+        row = conn.execute(
+            """
+            SELECT
+                p.id,
+                p.name,
+                p.category_id,
+                c.name AS category_name
+            FROM products p
+            JOIN category c ON c.id = p.category_id
+            WHERE p.id = ?
+            """,
+            (product_id,),
+        ).fetchone()
+
+        return ProductView(**dict(row)) if row else None
+
+    def list_all_views(self, limit: int = 200) -> List[ProductView]:
         conn = self.get_conn()
         rows = conn.execute(
             """
-            SELECT *
-            FROM products
-            ORDER BY name ASC
+            SELECT
+                p.id,
+                p.name,
+                p.category_id,
+                c.name AS category_name
+            FROM products p
+            JOIN category c ON c.id = p.category_id
+            ORDER BY c.name ASC, p.name ASC
             LIMIT ?
             """,
             (limit,),
         ).fetchall()
 
-        return [Product(**dict(r)) for r in rows]
+        return [ProductView(**dict(r)) for r in rows]
 
-    # -------------------------
+    # --------------------------------------------------
     # CREATE
-    # -------------------------
+    # --------------------------------------------------
 
-    def create(self, name: str, category: Optional[str]) -> Product:
+    def create(
+        self,
+        name: str,
+        category_id: str,
+    ) -> Product:
+
         product_id = str(uuid.uuid4())
 
         conn = self.get_conn()
         conn.execute(
             """
-            INSERT INTO products (id, name, category)
+            INSERT INTO products (id, name, category_id)
             VALUES (?, ?, ?)
             """,
-            (product_id, name, category),
+            (product_id, name, category_id),
         )
         conn.commit()
 
         return Product(
             id=product_id,
             name=name,
-            category=category,
+            category_id=category_id,
         )
 
-    def get_or_create(self, name: str, category: Optional[str]) -> Product:
-        existing = self.get_by_name_category(name, category)
+    def get_or_create(
+        self,
+        name: str,
+        category_id: str,
+    ) -> Product:
+
+        existing = self.get_by_name_category_id(name, category_id)
         if existing:
             return existing
 
-        return self.create(name, category)
+        return self.create(name, category_id)
 
-    # -------------------------
+    # --------------------------------------------------
     # UPDATE
-    # -------------------------
+    # --------------------------------------------------
 
     def update(
         self,
         product_id: str,
         name: Optional[str] = None,
-        category: Optional[str] = None,
+        category_id: Optional[str] = None,
     ) -> Optional[Product]:
 
         existing = self.get_by_id(product_id)
@@ -101,28 +142,30 @@ class ProductRepository:
             return None
 
         new_name = name if name is not None else existing.name
-        new_category = category if category is not None else existing.category
+        new_category_id = (
+            category_id if category_id is not None else existing.category_id
+        )
 
         conn = self.get_conn()
         conn.execute(
             """
             UPDATE products
-            SET name = ?, category = ?
+            SET name = ?, category_id = ?
             WHERE id = ?
             """,
-            (new_name, new_category, product_id),
+            (new_name, new_category_id, product_id),
         )
         conn.commit()
 
         return Product(
             id=product_id,
             name=new_name,
-            category=new_category,
+            category_id=new_category_id,
         )
 
-    # -------------------------
+    # --------------------------------------------------
     # DELETE
-    # -------------------------
+    # --------------------------------------------------
 
     def delete(self, product_id: str) -> bool:
         conn = self.get_conn()
@@ -137,66 +180,33 @@ class ProductRepository:
 
         return cur.rowcount > 0
 
-    # -------------------------
-    # SEARCH
-    # -------------------------
+    # --------------------------------------------------
+    # SEARCH (VIEW)
+    # --------------------------------------------------
 
-    def search_by_name(
+    def search_views_by_name(
         self,
         query: str,
         limit: int = 10,
-    ) -> List[Product]:
+    ) -> List[ProductView]:
 
         q = f"%{query.lower()}%"
 
         conn = self.get_conn()
         rows = conn.execute(
             """
-            SELECT *
-            FROM products
-            WHERE LOWER(name) LIKE ?
-            ORDER BY name ASC
+            SELECT
+                p.id,
+                p.name,
+                p.category_id,
+                c.name AS category_name
+            FROM products p
+            JOIN category c ON c.id = p.category_id
+            WHERE LOWER(p.name) LIKE ?
+            ORDER BY p.name ASC
             LIMIT ?
             """,
             (q, limit),
         ).fetchall()
 
-        return [Product(**dict(r)) for r in rows]
-
-    # -------------------------
-    # CATEGORIES
-    # -------------------------
-
-    def list_categories(self) -> List[str]:
-
-        conn = self.get_conn()
-        rows = conn.execute(
-            """
-            SELECT DISTINCT category
-            FROM products
-            WHERE category IS NOT NULL
-            ORDER BY category ASC
-            """
-        ).fetchall()
-
-        return [r["category"] for r in rows]
-
-    def list_by_category(
-        self,
-        category: str,
-        limit: int = 50,
-    ) -> List[Product]:
-
-        conn = self.get_conn()
-        rows = conn.execute(
-            """
-            SELECT *
-            FROM products
-            WHERE category = ?
-            ORDER BY name ASC
-            LIMIT ?
-            """,
-            (category, limit),
-        ).fetchall()
-
-        return [Product(**dict(r)) for r in rows]
+        return [ProductView(**dict(r)) for r in rows]

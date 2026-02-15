@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  autocompleteProducts,
-  listCategories,
-  type Product,
-} from "../api/products";
+import { autocompleteProducts, type Product } from "../api/products";
+import { listCategories, type Category } from "../api/category";
 import {
   addShoppingItem,
   listShoppingItems,
@@ -13,10 +10,9 @@ import {
 import type { OverlayActions } from "../ui/overlayActions";
 import QuantityField from "../ui/inputs/QuantityField";
 import TextField from "../ui/inputs/TextField";
-import { TrashIcon, PlusIcon, CartIcon} from "../ui/icons";
+import { TrashIcon, PlusIcon, CartIcon } from "../ui/icons";
 
 import { useTranslation } from "react-i18next";
-
 
 type ShoppingItem = {
   id: string;
@@ -40,7 +36,7 @@ export default function ShoppingOverlay({
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [items, setItems] = useState<ShoppingItem[]>([]);
 
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [addingNew, setAddingNew] = useState(false);
 
   const [customCategory, setCustomCategory] = useState("");
@@ -98,7 +94,7 @@ export default function ShoppingOverlay({
     const normalized = category.trim().toLowerCase();
 
     const exists = categories.some(
-      (c) => c.trim().toLowerCase() === normalized,
+      (c) => c.name.trim().toLowerCase() === normalized,
     );
 
     if (exists) {
@@ -149,7 +145,7 @@ export default function ShoppingOverlay({
         <header style={header}>
           <h2 style={title}>
             <span style={titleRow}>
-              <CartIcon size={32}/>
+              <CartIcon size={32} />
               {t("shoppingTitle")}
             </span>
           </h2>
@@ -167,10 +163,10 @@ export default function ShoppingOverlay({
                 <div
                   key={p.id}
                   style={autocompleteChip}
-                  onClick={() => addProduct(p.name, p.category ?? "")}
+                  onClick={() => addProduct(p.name, p.category_name ?? "")}
                 >
                   <span style={chipText}>
-                    {p.name} [{p.category ?? noCategoryName}]
+                    {p.name} [{p.category_name ?? noCategoryName}]
                   </span>
                 </div>
               ))}
@@ -184,9 +180,9 @@ export default function ShoppingOverlay({
                     setCategoryMode("select");
                   }}
                 >
-                  <PlusIcon size={22}/>
-                   {query.trim()}
-                   </div>
+                  <PlusIcon size={22} />
+                  {query.trim()}
+                </div>
               )}
             </div>
           )}
@@ -209,11 +205,11 @@ export default function ShoppingOverlay({
               <div style={chipRow}>
                 {categories.map((c) => (
                   <div
-                    key={c}
+                    key={c.id}
                     style={categoryChip}
-                    onClick={() => addProduct(query.trim(), c)}
+                    onClick={() => addProduct(query.trim(), c.name)}
                   >
-                    {c}
+                    {c.name}
                   </div>
                 ))}
 
@@ -258,7 +254,7 @@ export default function ShoppingOverlay({
           {grouped.keys.length === 0 && (
             <div style={emptyState}>
               <div style={{ fontSize: 48 }}>
-                <CartIcon size={43}/>
+                <CartIcon size={43} />
               </div>
               <div>{t("emptyShoppingListTitle")}</div>
               <div style={{ opacity: 0.6, fontSize: 16 }}>
@@ -329,7 +325,7 @@ function ShoppingItemRow({
             onChanged();
           }}
         >
-          <TrashIcon size={22}/>
+          <TrashIcon size={22} />
         </button>
       </div>
     </div>
@@ -447,7 +443,7 @@ const addNewChip: React.CSSProperties = {
   color: "#166534",
   fontWeight: 800,
   cursor: "pointer",
-  display: "flex"
+  display: "flex",
 };
 
 const addBox: React.CSSProperties = {
@@ -598,7 +594,7 @@ const removeBtn: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 0
+  padding: 0,
 };
 
 const errorBox: React.CSSProperties = {
