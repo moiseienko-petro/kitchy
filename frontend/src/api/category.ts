@@ -38,8 +38,8 @@ export async function createCategory(name: string): Promise<Category> {
 export async function updateCategory(
   id: string,
   name: string
-): Promise<Category> {
-  const res = await fetch(`${CATEGORIES_API}/${id}`, {
+) {
+  const res = await fetch(`${API_BASE}/categories/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name }),

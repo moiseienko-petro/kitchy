@@ -5,8 +5,9 @@ import {
   deleteProduct,
   type Product,
 } from "../api/products";
-import { TrashIcon, EditIcon } from "../ui/icons";
-import TextField from "../ui/inputs/TextField";
+import { updateCategory } from "../api/category";
+import { TrashIcon } from "../ui/icons";
+import InlineEditableText from "../ui/inputs/InlineEditableText";
 import { useTranslation } from "react-i18next";
 import type { OverlayActions } from "../ui/overlayActions";
 
@@ -16,12 +17,6 @@ interface Props {
   unregisterActions: () => void;
 }
 
-type EditDraft = {
-  id: string;
-  name: string;
-  category_name: string;
-};
-
 export default function ProductsOverlay({
   onClose,
   registerActions,
@@ -30,7 +25,6 @@ export default function ProductsOverlay({
   const { t } = useTranslation();
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [editing, setEditing] = useState<EditDraft | null>(null);
 
   async function refresh() {
     const data = await listProducts();
@@ -43,63 +37,72 @@ export default function ProductsOverlay({
     return unregisterActions;
   }, []);
 
-  /* ---------------- GROUPING ---------------- */
+  /* ---------------- GROUP BY CATEGORY ---------------- */
 
   const groups = useMemo(() => {
-    const map = new Map<string, Product[]>();
+    const map = new Map<string, { category_id: string; items: Product[] }>();
 
     for (const p of products) {
-      const key =
-        p.category_name?.trim() || t("noCategoryName");
+      const key = p.category_name?.trim() || t("noCategoryName");
 
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(p);
+      if (!map.has(key)) {
+        map.set(key, {
+          category_id: p.category_id,
+          items: [],
+        });
+      }
+
+      map.get(key)!.items.push(p);
     }
 
     const sorted = Array.from(map.entries())
-      .map(([cat, list]) => [
-        cat,
-        [...list].sort((a, b) => a.name.localeCompare(b.name)),
-      ] as const)
+      .map(
+        ([cat, data]) =>
+          [
+            cat,
+            data.category_id,
+            [...data.items].sort((a, b) => a.name.localeCompare(b.name)),
+          ] as const,
+      )
       .sort((a, b) => a[0].localeCompare(b[0]));
 
-    const otherName = t("noCategoryName");
-    const others = sorted.filter(([c]) => c === otherName);
-    const rest = sorted.filter(([c]) => c !== otherName);
+    const other = t("noCategoryName");
+    const others = sorted.filter(([c]) => c === other);
+    const rest = sorted.filter(([c]) => c !== other);
 
     return [...rest, ...others];
   }, [products, t]);
 
-  /* ---------------- EDIT ---------------- */
+  /* ---------------- CATEGORY RENAME ---------------- */
 
-  function startEdit(p: Product) {
-    setEditing({
-      id: p.id,
-      name: p.name,
-      category_name: p.category_name ?? "",
-    });
-  }
+  async function renameCategory(
+    categoryId: string,
+    oldName: string,
+    newName: string,
+  ) {
+    const clean = newName.trim();
+    if (!clean || clean === oldName) return;
 
-  function cancelEdit() {
-    setEditing(null);
-  }
+    await updateCategory(categoryId, clean);
 
-  async function saveEdit() {
-    if (!editing) return;
-
-    const name = editing.name.trim();
-    const category_name = editing.category_name.trim();
-
-    if (!name) return;
-
-    await updateProduct(editing.id, {
-      name,
-      category_name: category_name || null,
-    });
-
-    setEditing(null);
     refresh();
   }
+
+  /* ---------------- PRODUCT RENAME ---------------- */
+
+  async function renameProduct(p: Product, newName: string) {
+    const clean = newName.trim();
+    if (!clean || clean === p.name) return;
+
+    await updateProduct(p.id, {
+      name: clean,
+      category_name: p.category_name ?? null,
+    });
+
+    refresh();
+  }
+
+  /* ---------------- DELETE ---------------- */
 
   async function remove(p: Product) {
     await deleteProduct(p.id);
@@ -113,125 +116,47 @@ export default function ProductsOverlay({
       <div style={panel} onClick={(e) => e.stopPropagation()}>
         <div style={header}>
           <div style={title}>{t("productsTitle")}</div>
-          <button type="button" style={closeBtn} onClick={onClose}>
+          <button style={closeBtn} onClick={onClose}>
             ✕
           </button>
         </div>
 
         <div style={scroll}>
-          {groups.map(([categoryName, list]) => (
+          {groups.map(([categoryName, categoryId, list]) => (
             <div key={categoryName} style={catBlock}>
-              <div style={catHeader}>{categoryName}</div>
+              {/* CATEGORY TITLE EDITABLE */}
+              <div style={catHeader}>
+                <InlineEditableText
+                  value={categoryName}
+                  onCommit={(v) => renameCategory(categoryId, categoryName, v)}
+                  style={categoryTitleStyle}
+                />
+              </div>
 
               <div style={catList}>
-                {list.map((p) => {
-                  const isEditing = editing?.id === p.id;
-
-                  return (
-                    <div key={p.id} style={row}>
-                      {isEditing ? (
-                        <>
-                          <div style={editFields}>
-                            <div style={fieldRow}>
-                              <div style={fieldLabel}>
-                                {t("productNameTitle")}
-                              </div>
-                              <div style={fieldBox}>
-                                <TextField
-                                  value={editing!.name}
-                                  onChange={(v) =>
-                                    setEditing((prev) =>
-                                      prev
-                                        ? { ...prev, name: v }
-                                        : prev
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-
-                            <div style={fieldRow}>
-                              <div style={fieldLabel}>
-                                {t("productCategoryNameTitle")}
-                              </div>
-                              <div style={fieldBox}>
-                                <TextField
-                                  value={editing!.category_name}
-                                  onChange={(v) =>
-                                    setEditing((prev) =>
-                                      prev
-                                        ? { ...prev, category_name: v }
-                                        : prev
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={actions}>
-                            <button
-                              type="button"
-                              style={saveBtn}
-                              onClick={saveEdit}
-                            >
-                              {t("okButton")}
-                            </button>
-
-                            <button
-                              type="button"
-                              style={cancelBtn}
-                              onClick={cancelEdit}
-                            >
-                              {t("noButton")}
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={rowMain}>
-                            <div style={prodName}>{p.name}</div>
-                            {p.category_name && (
-                              <div style={prodMeta}>
-                                {p.category_name}
-                              </div>
-                            )}
-                          </div>
-
-                          <div style={actions}>
-                            <button
-                              type="button"
-                              style={iconBtn}
-                              onClick={() => startEdit(p)}
-                            >
-                              <EditIcon size={20} />
-                            </button>
-
-                            <button
-                              type="button"
-                              style={removeBtn}
-                              onClick={() => remove(p)}
-                            >
-                              <TrashIcon size={20} />
-                            </button>
-                          </div>
-                        </>
-                      )}
+                {list.map((p) => (
+                  <div key={p.id} style={row}>
+                    <div style={rowMain}>
+                      <InlineEditableText
+                        value={p.name}
+                        onCommit={(v) => renameProduct(p, v)}
+                        style={prodNameStyle}
+                      />
                     </div>
-                  );
-                })}
+
+                    <button style={removeBtn} onClick={() => remove(p)}>
+                      <TrashIcon size={20} />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
 
           {products.length === 0 && (
             <div style={empty}>
-              <div style={emptyTitle}>
-                {t("productsEmptyTitle")}
-              </div>
-              <div style={emptyText}>
-                {t("productsEmptyText")}
-              </div>
+              <div style={emptyTitle}>{t("productsEmptyTitle")}</div>
+              <div style={emptyText}>{t("productsEmptyText")}</div>
             </div>
           )}
         </div>
@@ -239,8 +164,6 @@ export default function ProductsOverlay({
     </div>
   );
 }
-
-/* ---------------- styles ---------------- */
 
 const overlay: React.CSSProperties = {
   position: "fixed",
@@ -253,7 +176,7 @@ const overlay: React.CSSProperties = {
 };
 
 const panel: React.CSSProperties = {
-  width: 1040,        // добре під 1280x800
+  width: 1040,
   height: 720,
   background: "#fff",
   borderRadius: 20,
@@ -270,7 +193,6 @@ const header: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   borderBottom: "1px solid #e5e7eb",
-  background: "rgba(255,255,255,0.92)",
 };
 
 const title: React.CSSProperties = {
@@ -286,10 +208,13 @@ const closeBtn: React.CSSProperties = {
   color: "#fff",
   border: "none",
   cursor: "pointer",
-  fontSize: 22,
+
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+
+  fontSize: 22,
+  fontWeight: 900,
 };
 
 const scroll: React.CSSProperties = {
@@ -306,10 +231,13 @@ const catBlock: React.CSSProperties = {
 
 const catHeader: React.CSSProperties = {
   padding: "10px 14px",
-  fontSize: 16,
-  fontWeight: 800,
   background: "#f3f4f6",
   borderBottom: "1px solid #e5e7eb",
+};
+
+const categoryTitleStyle: React.CSSProperties = {
+  fontSize: 18,
+  fontWeight: 900,
 };
 
 const catList: React.CSSProperties = {
@@ -323,104 +251,32 @@ const row: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: 12,
   padding: "10px 12px",
-  background: "#fff",
-  border: "1px solid #eef2f7",
   borderRadius: 14,
+  border: "1px solid #eef2f7",
 };
 
 const rowMain: React.CSSProperties = {
   flex: 1,
-  minWidth: 0,
 };
 
-const prodName: React.CSSProperties = {
-  fontSize: 18,
+const prodNameStyle: React.CSSProperties = {
+  fontSize: 16,
   fontWeight: 700,
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
-const prodMeta: React.CSSProperties = {
-  marginTop: 2,
-  fontSize: 13,
-  color: "#6b7280",
-};
-
-const actions: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-};
-
-const iconBtn: React.CSSProperties = {
-  width: 44,
-  height: 44,
-  borderRadius: 12,
-  border: "1px solid #e5e7eb",
-  cursor: "pointer",
-
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-
-  padding: 0,
 };
 
 const removeBtn: React.CSSProperties = {
-  ...iconBtn,
+  width: 40,
+  height: 40,
+  borderRadius: 12,
   background: "#fee2e2",
-  border: "1px solid #fecaca",
   color: "#b91c1c",
-};
-
-const editFields: React.CSSProperties = {
-  flex: 1,
+  border: "1px solid #fecaca",
+  cursor: "pointer",
   display: "flex",
-  flexDirection: "column",
-  gap: 10,
-};
-
-const fieldRow: React.CSSProperties = {
-  display: "flex",
-  gap: 10,
   alignItems: "center",
-};
-
-const fieldLabel: React.CSSProperties = {
-  width: 80,
-  fontSize: 14,
-  fontWeight: 700,
-  color: "#374151",
-};
-
-const fieldBox: React.CSSProperties = {
-  flex: 1,
-  minWidth: 0,
-};
-
-const saveBtn: React.CSSProperties = {
-  height: 44,
-  padding: "0 14px",
-  borderRadius: 12,
-  border: "none",
-  background: "#22c55e",
-  color: "#fff",
-  fontWeight: 800,
-  cursor: "pointer",
-};
-
-const cancelBtn: React.CSSProperties = {
-  height: 44,
-  padding: "0 14px",
-  borderRadius: 12,
-  border: "1px solid #e5e7eb",
-  background: "#fff",
-  color: "#111827",
-  fontWeight: 800,
-  cursor: "pointer",
+  justifyContent: "center",
+  padding: 0,
 };
 
 const empty: React.CSSProperties = {
@@ -428,14 +284,12 @@ const empty: React.CSSProperties = {
   padding: 20,
   borderRadius: 16,
   background: "#f9fafb",
-  border: "1px dashed #d1d5db",
   textAlign: "center",
 };
 
 const emptyTitle: React.CSSProperties = {
   fontSize: 18,
   fontWeight: 800,
-  marginBottom: 6,
 };
 
 const emptyText: React.CSSProperties = {
